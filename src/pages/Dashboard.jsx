@@ -46,7 +46,8 @@ export const Dashboard = ({ onAddTransactionClick }) => {
     categories,
     healthScore,
     insights,
-    setActiveTab
+    setActiveTab,
+    theme
   } = useApp()
 
   // Calculate Balances
@@ -71,9 +72,19 @@ export const Dashboard = ({ onAddTransactionClick }) => {
 
   const categoryLabels = Object.keys(expenseByCategory)
   const categoryData = Object.values(expenseByCategory)
-  const categoryColors = categoryLabels.map(label => {
+  const categoryColors = categoryLabels.map((label, index) => {
     const cat = categories.find(c => c.name === label)
-    return cat ? cat.color : '#cbd5e1'
+    if (cat) {
+      const isDuplicate = categoryLabels.slice(0, index).some(prevLabel => {
+        const prevCat = categories.find(c => c.name === prevLabel)
+        return prevCat && prevCat.color === cat.color
+      })
+      if (isDuplicate) {
+        return `hsl(${(220 + index * 40) % 360}, 75%, 60%)`
+      }
+      return cat.color
+    }
+    return '#cbd5e1'
   })
 
   const doughnutData = {
@@ -82,7 +93,10 @@ export const Dashboard = ({ onAddTransactionClick }) => {
       {
         data: categoryData.length > 0 ? categoryData : [1],
         backgroundColor: categoryColors.length > 0 ? categoryColors : ['#e2e8f0'],
-        borderWidth: 0,
+        borderWidth: categoryData.length > 0 ? 2 : 0,
+        borderColor: theme === 'dark' ? '#111827' : '#ffffff',
+        spacing: categoryData.length > 0 ? 4 : 0,
+        borderRadius: categoryData.length > 0 ? 4 : 0,
         hoverOffset: 4
       }
     ]
@@ -254,10 +268,11 @@ export const Dashboard = ({ onAddTransactionClick }) => {
       {/* Main KPI metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Net Balance Card */}
-        <div className="glass-effect rounded-2xl p-6 shadow-md relative overflow-hidden group">
+        <div className="glass-effect rounded-2xl p-6 shadow-md relative overflow-hidden group premium-card-glow">
           <div className="absolute top-0 right-0 p-6 opacity-10 text-indigo-500 group-hover:scale-110 transition duration-300">
             <Wallet className="h-16 w-16" />
           </div>
+          <div className="absolute -right-10 -bottom-10 h-28 w-28 rounded-full bg-indigo-500/10 blur-xl group-hover:bg-indigo-500/20 transition-all duration-300" />
           <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Net Available Balance
           </p>
@@ -272,10 +287,11 @@ export const Dashboard = ({ onAddTransactionClick }) => {
         </div>
 
         {/* Total Income Card */}
-        <div className="glass-effect rounded-2xl p-6 shadow-md relative overflow-hidden group">
+        <div className="glass-effect rounded-2xl p-6 shadow-md relative overflow-hidden group premium-card-glow">
           <div className="absolute top-0 right-0 p-6 opacity-10 text-emerald-500 group-hover:scale-110 transition duration-300">
             <TrendingUp className="h-16 w-16" />
           </div>
+          <div className="absolute -right-10 -bottom-10 h-28 w-28 rounded-full bg-emerald-500/10 blur-xl group-hover:bg-emerald-500/20 transition-all duration-300" />
           <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Total Inflow
           </p>
@@ -289,10 +305,11 @@ export const Dashboard = ({ onAddTransactionClick }) => {
         </div>
 
         {/* Total Expense Card */}
-        <div className="glass-effect rounded-2xl p-6 shadow-md relative overflow-hidden group">
+        <div className="glass-effect rounded-2xl p-6 shadow-md relative overflow-hidden group premium-card-glow">
           <div className="absolute top-0 right-0 p-6 opacity-10 text-rose-500 group-hover:scale-110 transition duration-300">
             <TrendingDown className="h-16 w-16" />
           </div>
+          <div className="absolute -right-10 -bottom-10 h-28 w-28 rounded-full bg-rose-500/10 blur-xl group-hover:bg-rose-500/20 transition-all duration-300" />
           <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             Total Outflow
           </p>

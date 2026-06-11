@@ -21,6 +21,7 @@ export const AppProvider = ({ children }) => {
   const [budgets, setBudgets] = useState([])
   const [goals, setGoals] = useState([])
   const [bills, setBills] = useState([])
+  const [recurringTemplates, setRecurringTemplates] = useState([])
 
   // Undo/Redo Stack for Transactions
   const [history, setHistory] = useState({
@@ -67,21 +68,79 @@ export const AppProvider = ({ children }) => {
     }
   }
 
+  const checkAndPostRecurringTxs = useCallback(async (templatesList) => {
+    const todayStr = new Date().toISOString().split('T')[0]
+    const dueTemplates = templatesList.filter(t => t.active && t.next_run_date && t.next_run_date <= todayStr)
+    
+    if (dueTemplates.length === 0) return
+
+    let updatedTemplates = [...templatesList]
+    let txsToAdd = []
+
+    for (let t of dueTemplates) {
+      const txPayload = {
+        account_id: t.account_id,
+        to_account_id: null,
+        type: t.type,
+        amount: parseFloat(t.amount),
+        category_id: t.category_id,
+        party_id: null,
+        note: `[Recurring] ${t.title}`,
+        date: t.next_run_date
+      }
+      
+      txsToAdd.push(txPayload)
+
+      const nextRun = new Date(t.next_run_date)
+      if (t.frequency === 'daily') {
+        nextRun.setDate(nextRun.getDate() + 1)
+      } else if (t.frequency === 'weekly') {
+        nextRun.setDate(nextRun.getDate() + 7)
+      } else if (t.frequency === 'monthly') {
+        nextRun.setMonth(nextRun.getMonth() + 1)
+      } else if (t.frequency === 'yearly') {
+        nextRun.setFullYear(nextRun.getFullYear() + 1)
+      }
+      const nextRunStr = nextRun.toISOString().split('T')[0]
+
+      await dbService.updateRecurringTemplate(t.id, { next_run_date: nextRunStr })
+      updatedTemplates = updatedTemplates.map(item => item.id === t.id ? { ...item, next_run_date: nextRunStr } : item)
+    }
+
+    if (txsToAdd.length > 0) {
+      const addedTxs = []
+      for (let tx of txsToAdd) {
+        const newTx = await dbService.addTransaction(tx)
+        addedTxs.push(newTx)
+      }
+
+      setTransactions(prev => [...prev, ...addedTxs])
+      setRecurringTemplates(updatedTemplates)
+
+      const accs = await dbService.getAccounts()
+      setAccounts(accs)
+
+      showToast(`Processed ${txsToAdd.length} recurring transactions!`, 'success')
+    }
+  }, [showToast])
+
   // Load Initial Data from dbService
   const loadData = async () => {
+    const startTime = Date.now()
     try {
       setLoading(true)
       const session = await dbService.getSession()
       setUser(session ? session.user : null)
 
-      const [accs, txs, cats, pts, bdgs, gls, bls] = await Promise.all([
+      const [accs, txs, cats, pts, bdgs, gls, bls, recs] = await Promise.all([
         dbService.getAccounts(),
         dbService.getTransactions(),
         dbService.getCategories(),
         dbService.getParties(),
         dbService.getBudgets(),
         dbService.getGoals(),
-        dbService.getBills()
+        dbService.getBills(),
+        dbService.getRecurringTemplates()
       ])
 
       setAccounts(accs || [])
@@ -91,10 +150,20 @@ export const AppProvider = ({ children }) => {
       setBudgets(bdgs || [])
       setGoals(gls || [])
       setBills(bls || [])
+      setRecurringTemplates(recs || [])
+
+      if (recs && recs.length > 0) {
+        await checkAndPostRecurringTxs(recs)
+      }
     } catch (err) {
       console.error('Failed to load application data:', err)
       showToast('Error loading details. Using local backup.', 'error')
     } finally {
+      const elapsedTime = Date.now() - startTime
+      const minDuration = 1000 // 1 second minimum display to avoid flash
+      if (elapsedTime < minDuration) {
+        await new Promise(resolve => setTimeout(resolve, minDuration - elapsedTime))
+      }
       setLoading(false)
     }
   }
@@ -113,19 +182,20 @@ export const AppProvider = ({ children }) => {
             // Clean up verification hash from URL if present
             const hash = window.location.hash
             if (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery')) {
-              showToast('Email verified successfully! Welcome to Centava.', 'success')
+              showToast('Email verified successfully! Welcome to Personal Account Assistant AI.', 'success')
               window.history.replaceState(null, null, window.location.pathname)
             }
             // Reload all data for the newly authenticated user
             try {
-              const [accs, txs, cats, pts, bdgs, gls, bls] = await Promise.all([
+              const [accs, txs, cats, pts, bdgs, gls, bls, recs] = await Promise.all([
                 dbService.getAccounts(),
                 dbService.getTransactions(),
                 dbService.getCategories(),
                 dbService.getParties(),
                 dbService.getBudgets(),
                 dbService.getGoals(),
-                dbService.getBills()
+                dbService.getBills(),
+                dbService.getRecurringTemplates()
               ])
               setAccounts(accs || [])
               setTransactions(txs || [])
@@ -134,6 +204,10 @@ export const AppProvider = ({ children }) => {
               setBudgets(bdgs || [])
               setGoals(gls || [])
               setBills(bls || [])
+              setRecurringTemplates(recs || [])
+              if (recs && recs.length > 0) {
+                await checkAndPostRecurringTxs(recs)
+              }
               setLoading(false)
             } catch (err) {
               console.error('Failed to reload data after sign-in:', err)
@@ -162,7 +236,7 @@ export const AppProvider = ({ children }) => {
     return () => {
       if (authSubscription) authSubscription.unsubscribe()
     }
-  }, [showToast])
+  }, [showToast, checkAndPostRecurringTxs])
 
   // --- UNDO / REDO TRANSACTIONS ENGINE ---
   const saveToHistory = (newTransactionsList) => {
@@ -377,6 +451,42 @@ export const AppProvider = ({ children }) => {
     }
   }
 
+  // --- RECURRING SCHEDULER & IMPORT/EXPORT BACKUPS ---
+  const addRecurringTemplate = async (item) => {
+    try {
+      const newTemplate = await dbService.addRecurringTemplate(item)
+      setRecurringTemplates(prev => [...prev, newTemplate])
+      showToast(`Scheduled '${newTemplate.title}' successfully!`)
+      return newTemplate
+    } catch (err) {
+      showToast('Failed to add schedule.', 'error')
+    }
+  }
+
+  const deleteRecurringTemplate = async (id) => {
+    try {
+      await dbService.deleteRecurringTemplate(id)
+      setRecurringTemplates(prev => prev.filter(t => t.id !== id))
+      showToast('Recurring schedule deleted.', 'warning')
+    } catch (err) {
+      showToast('Failed to delete schedule.', 'error')
+    }
+  }
+
+  const updateRecurringTemplateState = async (id, updates) => {
+    try {
+      const updated = await dbService.updateRecurringTemplate(id, updates)
+      setRecurringTemplates(prev => prev.map(t => t.id === id ? updated : t))
+      showToast('Recurring schedule updated.')
+    } catch (err) {
+      showToast('Failed to update schedule.', 'error')
+    }
+  }
+
+
+
+
+
   // Dynamic calculations for Financial Health & Insights
   const healthMetrics = calculateFinancialHealth({
     transactions,
@@ -415,6 +525,7 @@ export const AppProvider = ({ children }) => {
         budgets,
         goals,
         bills,
+        recurringTemplates,
         
         searchQuery,
         setSearchQuery,
@@ -445,6 +556,10 @@ export const AppProvider = ({ children }) => {
         
         addBill,
         updateBill,
+
+        addRecurringTemplate,
+        deleteRecurringTemplate,
+        updateRecurringTemplate: updateRecurringTemplateState,
         
         uploadAttachment,
         logOut,

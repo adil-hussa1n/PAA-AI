@@ -40,6 +40,7 @@ export const Sidebar = () => {
     { id: 'budgets', name: 'Budgets & Goals', icon: Target },
     { id: 'bills', name: 'Bills & Dues', icon: CreditCard },
     { id: 'calendar', name: 'Calendar View', icon: Calendar },
+    { id: 'reports', name: 'Reports & Analytics', icon: PieChart },
     { id: 'insights', name: 'Smart Insights', icon: Sparkles }
   ]
 
@@ -80,12 +81,15 @@ export const Sidebar = () => {
       {/* Mobile Top Header */}
       <header className="md:hidden flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-dark-border bg-white/70 dark:bg-dark-card/70 backdrop-blur-md sticky top-0 z-40">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-indigo-600/30">
-            C
+
+          <div className="flex flex-col">
+            <span className="font-extrabold text-xs tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+              Personal Account Assistant AI
+            </span>
+            <span className="text-4xs text-slate-400 font-medium tracking-wide">
+              Smart Finance, Powered by GraffixInnovation
+            </span>
           </div>
-          <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-            Centava
-          </span>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -121,12 +125,15 @@ export const Sidebar = () => {
           {/* Header Branding */}
           <div className="flex items-center justify-between px-6 py-6 border-b border-slate-200 dark:border-dark-border">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-indigo-600/30 animate-pulse">
-                C
+
+              <div className="flex flex-col">
+                <span className="font-extrabold text-[14px] leading-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                  Personal Account Assistant AI
+                </span>
+                <span className="text-[12px] text-slate-400 font-medium tracking-wide leading-none mt-1">
+                  Smart Finance, Powered by GraffixInnovation
+                </span>
               </div>
-              <span className="font-extrabold text-2xl tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                Centava
-              </span>
             </div>
             <button
               onClick={toggleMobileMenu}
@@ -148,10 +155,10 @@ export const Sidebar = () => {
                     setActiveTab(item.id)
                     setIsOpen(false)
                   }}
-                  className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition duration-200 group cursor-pointer ${
+                  className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition-all duration-200 group cursor-pointer ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                      : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800/60'
+                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-600/30 border-l-4 border-indigo-400 pl-3 scale-[1.02]'
+                      : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-slate-800/60 hover:translate-x-1'
                   }`}
                 >
                   <Icon
@@ -216,6 +223,16 @@ export const Sidebar = () => {
                 <LogOut className="h-3.5 w-3.5" />
                 Log Out
               </button>
+            </div>
+            <div className="pt-2 text-center border-t border-slate-200/30 dark:border-dark-border/30">
+              <a
+                href="https://www.graffixinnovation.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] font-bold text-slate-400 hover:text-indigo-500 transition duration-150"
+              >
+                Powered by GraffixInnovation
+              </a>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
-# Centava - Premium Personal Finance & Accounting
+# Personal Account Assistant AI - Smart Finance, Powered by GraffixInnovation
 
-Centava is a complete, production-ready personal accounting web application featuring real-time tracking of wallets, custom category budgets, debt management with contacts, savings goals, due bills, calendar logs, and smart AI category suggestions.
+Personal Account Assistant AI is a complete, production-ready personal accounting web application featuring real-time tracking of wallets, custom category budgets, debt management with contacts, savings goals, due bills, calendar logs, and smart AI category suggestions.
 
 Built using **React (Vite)**, **Tailwind CSS**, and **Supabase Backend**.
 
@@ -31,7 +31,7 @@ npm install
 ```bash
 npm run dev
 ```
-Centava will automatically initialize local storage with mock seed data, letting you experiment immediately with no database setup required.
+Personal Account Assistant AI will automatically initialize local storage with mock seed data, letting you experiment immediately with no database setup required.
 
 ### 3. Connect Supabase (Optional)
 To back up your data to the cloud:

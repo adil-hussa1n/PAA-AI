@@ -57,7 +57,7 @@ export const Transactions = ({ onAddClick, onEditClick }) => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.setAttribute('href', url)
-    link.setAttribute('download', `centava_transactions_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', `paa_ai_transactions_${new Date().toISOString().split('T')[0]}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
